@@ -2,11 +2,14 @@ import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
 import { CreateEmployeeComponent } from './employee/create-employee.component';
 import { ListEmployeesComponent } from './employee/list-employees.component';
+import { BootstrapDemoComponent } from './bootstrap/bootstrap-demo/bootstrap-demo.component';
+
 
 
 const routes: Routes = [
   { path: 'list', component: ListEmployeesComponent },
   { path: 'create', component: CreateEmployeeComponent },
+  { path: 'bootstrap', component: BootstrapDemoComponent },
   { path: '', redirectTo: '/list', pathMatch: 'full' }
 
 ];
