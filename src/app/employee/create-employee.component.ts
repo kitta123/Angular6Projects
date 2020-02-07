@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { FormGroup, FormControl, FormBuilder, Validators, FormsModule, FormArray } from '@angular/forms';
+import { FormGroup, FormBuilder, FormArray, Validators, AbstractControl } from '@angular/forms';
+import { CustomValidators } from '../shared/custom.validator';
+import { GroupedObservable } from 'rxjs';
 
 @Component({
   selector: 'app-create-employee',
@@ -18,6 +20,13 @@ export class CreateEmployeeComponent implements OnInit {
     },
     'email': {
       'required': 'Email is required.',
+      'emailDomain': 'Email Domain Should be gmail.com'
+    },
+    'confirmEmail': {
+      'required': 'Confirm Email is required.',
+    },
+    'emailGroup':{
+      'emailMismatch': 'Email and Confirm Email  do not match'
     },
     'phone': {
       'required': 'Phone is required.',
@@ -36,6 +45,9 @@ export class CreateEmployeeComponent implements OnInit {
   formErrors = {
     'fullName': '',
     'email': '',
+    'confirmEmail': '',
+    'emailGroup':'',
+    'phone': '',
     'skillName': '',
     'experienceInYears': '',
     'proficiency': ''
@@ -66,15 +78,16 @@ export class CreateEmployeeComponent implements OnInit {
     this.employeeForm = this.fb.group({
       fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(10)]],
       contactPreference: ['email'],
-      email: ['', Validators.required],
+      emailGroup: this.fb.group({
+        email: ['', [Validators.required, CustomValidators.emailDomain('gmail.com')]],
+        confirmEmail:  ['',Validators.required],
+      }, { validator: matchEmail }),
       phone: [],
       // company: new FormControl(),
       // bloodGroup: new FormControl(),
-      skills: this.fb.group({
-        skillName: ['', Validators.required],
-        experienceInYears: ['', Validators.required],
-        proficiency: ['', Validators.required]
-      })
+      skills: this.fb.array([
+        this.addSkillFormGroup()
+      ])
     });
 
     this.employeeForm.get('contactPreference').valueChanges.subscribe((data: string) => {
@@ -87,26 +100,39 @@ export class CreateEmployeeComponent implements OnInit {
 
   }
 
-// Dynamically Adding and Removing function.
-  onContactPreferenceChange(selectValue: string){
+  // Angular dynamic forms. 
+
+  addSkillButtonClick(): void {
+    (<FormArray>this.employeeForm.get('skills')).push(this.addSkillFormGroup());
+  }
+
+  // Creating formarray of formgroup objects in Angular
+
+  addSkillFormGroup(): FormGroup {
+    return this.fb.group({
+      skillName: ['', Validators.required],
+      experienceInYears: ['', Validators.required],
+      proficiency: ['', Validators.required]
+    });
+  }
+
+  // Dynamically Adding and Removing function.
+  onContactPreferenceChange(selectValue: string) {
     const phoneControl = this.employeeForm.get('phone');
-      if (selectValue === 'phone'){
-        phoneControl.setValidators(Validators.required);
-      }else{
-        phoneControl.clearValidators();
-      }
-      phoneControl.updateValueAndValidity();
+    if (selectValue === 'phone') {
+      phoneControl.setValidators(Validators.required);
+    } else {
+      phoneControl.clearValidators();
     }
+    phoneControl.updateValueAndValidity();
+  }
 
   // Loop through all Form Control in ReactiveForms.
   logValidationErrors(group: FormGroup = this.employeeForm): void {
     // console.log(Object.keys(group.controls));
     Object.keys(group.controls).forEach((key: string) => {
       const abstractControl = group.get(key);
-      if (abstractControl instanceof FormGroup) {
-        this.logValidationErrors(abstractControl);
-      } else {
-        this.formErrors[key] = '';
+      this.formErrors[key] = '';
         if (abstractControl && !abstractControl.valid && (abstractControl.touched || abstractControl.dirty)) {
           const messages = this.validationMessages[key];
 
@@ -116,8 +142,16 @@ export class CreateEmployeeComponent implements OnInit {
             }
           }
         }
-        // abstractControl.markAsDirty();
-        // console.log('Key=' + key + 'value=' + abstractControl.value)
+      if (abstractControl instanceof FormGroup) {
+        this.logValidationErrors(abstractControl);
+      }
+
+      if (abstractControl instanceof FormArray) {
+        for (const control of abstractControl.controls) {
+          if (control instanceof FormGroup) {
+            this.logValidationErrors(control);
+          }
+        }
       }
     });
   }
@@ -141,7 +175,7 @@ export class CreateEmployeeComponent implements OnInit {
   //   });
   // }
 
-// patchValue in Reactive Forms.
+  // patchValue in Reactive Forms.
   onLoadDataClick1(): void {
     this.employeeForm.patchValue({
       fullName: 'karthik',
@@ -155,7 +189,8 @@ export class CreateEmployeeComponent implements OnInit {
     });
   }
 
-// Angular FormArray Example.  
+  // Angular FormArray Example.
+
   // onLoadDataClick2(): void {
   //   const formArray = new FormArray([
   //     new FormControl('Jhon', Validators.required),
@@ -195,9 +230,33 @@ export class CreateEmployeeComponent implements OnInit {
   //   console.log(formGroup);
   // }
 
-// onSubmit Function in Reactive Forms.
+  // onSubmit Function in Reactive Forms.
   onSubmit(): void {
     console.log(this.employeeForm.value);
   }
 
+}
+
+// Angular reactive form custom validator with parameters.
+
+// function emailDomain(domainName: string) {
+//   return (control: AbstractControl): { [key: string]: any } | null => {
+//     const email: string = control.value;
+//     const domain = email.substring(email.lastIndexOf('@') + 1);
+//     if (email === '' || domain.toLowerCase() === domainName.toLowerCase()) {
+//       return null;
+//     } else {
+//       return { 'emailDomain': true };
+//     }
+//   };
+// }
+
+function matchEmail(group: AbstractControl): { [key: string]: any } | null {
+  const emailControl = group.get('email');
+  const confirmEmailControl = group.get('confirmEmail');
+  if (emailControl.value === confirmEmailControl.value || confirmEmailControl.pristine){
+    return null;
+  }else{
+    return { 'emailMismatch': true };
+  }
 }

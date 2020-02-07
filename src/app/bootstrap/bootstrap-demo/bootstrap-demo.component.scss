@@ -1,7 +1,41 @@
 .customDiv{
-    margin: 3px;
+    margin-bottom: 3px;
     min-height: 300px;
     background-color: silver;
     text-align: center;
     font-size: large;
+}
+
+// Bootstrap nested rows and columns
+.sidebarContent{
+    margin-bottom: 10px;
+    min-height: 150px;
+    background-color: silver;
+    text-align: center;
+    font-size: large;
+}
+
+.mainContent{
+    margin-bottom: 10px;
+    min-height: 310px;
+    background-color: silver;
+    text-align: center;
+    font-size: large;
+}
+
+.customDiv1{
+    margin-bottom: 10px;
+    min-height: 150px;
+    background-color: silver;
+    text-align: center;
+    font-size: large;
+}
+
+.customDiv2{
+    margin-bottom: 10px;
+    min-height: 50px;
+    background-color: silver;
+    text-align: center;
+    font-size: large;
+    padding: 10px;
 }
