@@ -2,6 +2,11 @@ import { Component, OnInit } from '@angular/core';
 import { FormGroup, FormBuilder, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { CustomValidators } from '../shared/custom.validator';
 import { GroupedObservable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { EmployeeService } from './employee.service';
+import { IEmployee } from './IEmployee';
+import { ISkill } from './ISkill';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-create-employee',
@@ -10,6 +15,8 @@ import { GroupedObservable } from 'rxjs';
 })
 export class CreateEmployeeComponent implements OnInit {
   employeeForm: FormGroup;
+  employee: IEmployee;
+  pageTitle: string;
 
   // Validation messages in Components
   validationMessages = {
@@ -25,35 +32,21 @@ export class CreateEmployeeComponent implements OnInit {
     'confirmEmail': {
       'required': 'Confirm Email is required.',
     },
-    'emailGroup':{
+    'emailGroup': {
       'emailMismatch': 'Email and Confirm Email  do not match'
     },
     'phone': {
       'required': 'Phone is required.',
-    },
-    'skillName': {
-      'required': 'skill Name is required.',
-    },
-    'experienceInYears': {
-      'required': 'Experience is required.',
-    },
-    'proficiency': {
-      'required': 'Proficiency is required.',
-    },
+    }
   };
 
   formErrors = {
-    'fullName': '',
-    'email': '',
-    'confirmEmail': '',
-    'emailGroup':'',
-    'phone': '',
-    'skillName': '',
-    'experienceInYears': '',
-    'proficiency': ''
   };
 
-  constructor(private fb: FormBuilder) { }
+  constructor(private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private employeeService: EmployeeService,
+    private router: Router) { }
 
   // FormGroup & FormControl in Reactive Forms.
 
@@ -80,7 +73,7 @@ export class CreateEmployeeComponent implements OnInit {
       contactPreference: ['email'],
       emailGroup: this.fb.group({
         email: ['', [Validators.required, CustomValidators.emailDomain('gmail.com')]],
-        confirmEmail:  ['',Validators.required],
+        confirmEmail: ['', Validators.required],
       }, { validator: matchEmail }),
       phone: [],
       // company: new FormControl(),
@@ -98,12 +91,80 @@ export class CreateEmployeeComponent implements OnInit {
       this.logValidationErrors(this.employeeForm);
     });
 
+    this.route.paramMap.subscribe(params => {
+      const empId = +params.get('id');
+      if (empId) {
+        this.pageTitle = 'Edit Employee';
+        this.getEmployee(empId);
+      } else {
+        this.pageTitle = 'Create Employee';
+        this.employee = {
+          id: null,
+          fullName: '',
+          contactPreference: '',
+          email: '',
+          phone: null,
+          skills: []
+        };
+      }
+    });
+    
+  }
+
+  // Edit Employee Details
+
+  getEmployee(id: number) {
+    this.employeeService.getEmployee(id)
+      .subscribe(
+        (employee: IEmployee) => {
+          // Store the employee object returned by the
+          // REST API in the employee property
+          this.employee = employee;
+          this.editEmployee(employee);
+        },
+        (err: any) => console.log(err)
+      );
+  }
+
+  editEmployee(employee: IEmployee) {
+    this.employeeForm.patchValue({
+      fullName: employee.fullName,
+      contactPreference: employee.contactPreference,
+      emailGroup: {
+        email: employee.email,
+        confirmEmail: employee.email
+      },
+      phone: employee.phone
+    });
+    this.employeeForm.setControl('skills', this.setExistingSkills(employee.skills));
+  }
+
+  // Angular populate formarray
+  setExistingSkills(skillSets: ISkill[]): FormArray {
+    const formArray = new FormArray([]);
+    skillSets.forEach(s => {
+      formArray.push(this.fb.group({
+        skillName: s.skillName,
+        experienceInYears: s.experienceInYears,
+        proficiency: s.proficiency
+      }));
+    });
+
+    return formArray;
   }
 
   // Angular dynamic forms. 
 
   addSkillButtonClick(): void {
     (<FormArray>this.employeeForm.get('skills')).push(this.addSkillFormGroup());
+  }
+
+  // Remove dynamically created form controls in angular
+  removeSkillButtonClick(skillGroupIndex: number): void {
+    const skillsFormArray = <FormArray>this.employeeForm.get('skills');
+    skillsFormArray.removeAt(skillGroupIndex);
+    skillsFormArray.markAsDirty();
+    skillsFormArray.markAsTouched();
   }
 
   // Creating formarray of formgroup objects in Angular
@@ -133,25 +194,17 @@ export class CreateEmployeeComponent implements OnInit {
     Object.keys(group.controls).forEach((key: string) => {
       const abstractControl = group.get(key);
       this.formErrors[key] = '';
-        if (abstractControl && !abstractControl.valid && (abstractControl.touched || abstractControl.dirty)) {
-          const messages = this.validationMessages[key];
+      if (abstractControl && !abstractControl.valid && (abstractControl.touched || abstractControl.dirty || abstractControl.value !== '')) {
+        const messages = this.validationMessages[key];
 
-          for (const errorKey in abstractControl.errors) {
-            if (errorKey) {
-              this.formErrors[key] += messages[errorKey] + ' ';
-            }
+        for (const errorKey in abstractControl.errors) {
+          if (errorKey) {
+            this.formErrors[key] += messages[errorKey] + ' ';
           }
         }
+      }
       if (abstractControl instanceof FormGroup) {
         this.logValidationErrors(abstractControl);
-      }
-
-      if (abstractControl instanceof FormArray) {
-        for (const control of abstractControl.controls) {
-          if (control instanceof FormGroup) {
-            this.logValidationErrors(control);
-          }
-        }
       }
     });
   }
@@ -232,7 +285,27 @@ export class CreateEmployeeComponent implements OnInit {
 
   // onSubmit Function in Reactive Forms.
   onSubmit(): void {
-    console.log(this.employeeForm.value);
+    this.mapFormValuesToEmployeeModel();
+  
+    if (this.employee.id) {
+      this.employeeService.updateEmployee(this.employee).subscribe(
+        () => this.router.navigate(['employees']),
+        (err: any) => console.log(err)
+      );
+    } else {
+      this.employeeService.addEmployee(this.employee).subscribe(
+        () => this.router.navigate(['employees']),
+        (err: any) => console.log(err)
+      );
+    }
+  }
+
+  mapFormValuesToEmployeeModel() {
+    this.employee.fullName = this.employeeForm.value.fullName;
+    this.employee.contactPreference = this.employeeForm.value.contactPreference;
+    this.employee.email = this.employeeForm.value.emailGroup.email;
+    this.employee.phone = this.employeeForm.value.phone;
+    this.employee.skills = this.employeeForm.value.skills;
   }
 
 }
@@ -254,9 +327,10 @@ export class CreateEmployeeComponent implements OnInit {
 function matchEmail(group: AbstractControl): { [key: string]: any } | null {
   const emailControl = group.get('email');
   const confirmEmailControl = group.get('confirmEmail');
-  if (emailControl.value === confirmEmailControl.value || confirmEmailControl.pristine){
+  if (emailControl.value === confirmEmailControl.value
+    || (confirmEmailControl.pristine && confirmEmailControl.value === '')) {
     return null;
-  }else{
+  } else {
     return { 'emailMismatch': true };
   }
 }

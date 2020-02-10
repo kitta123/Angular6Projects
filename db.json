@@ -1,0 +1,85 @@
+{
+  "employees": [
+    {
+      "id": 1,
+      "fullName": "karthik",
+      "contactPreference": "phone",
+      "email": "karthik@gmail.com",
+      "phone": "8951090089",
+      "skills": [
+        {
+          "skillName": "python",
+          "experienceInYears": "1.5",
+          "proficiency": "beginner"
+        },
+        {
+          "skillName": "machine Learning",
+          "experienceInYears": "0",
+          "proficiency": "beginner"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "fullName": "John",
+      "contactPreference": "phone",
+      "email": "john@email.com",
+      "phone": "3242138971",
+      "skills": [
+        {
+          "skillName": "Angular",
+          "experienceInYears": 2,
+          "proficiency": "beginner"
+        },
+        {
+          "skillName": "HTML",
+          "experienceInYears": 2,
+          "proficiency": "intermediate"
+        },
+        {
+          "skillName": "LINQ",
+          "experienceInYears": 3,
+          "proficiency": "advanced"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "fullName": "vikram",
+      "contactPreference": "phone",
+      "email": "vikram@gmail.com",
+      "phone": "9164424945",
+      "skills": [
+        {
+          "skillName": "java",
+          "experienceInYears": "3",
+          "proficiency": "advanced"
+        },
+        {
+          "skillName": "machine Learning",
+          "experienceInYears": "6",
+          "proficiency": "advanced"
+        },
+        {
+          "skillName": "Ruby and Rails",
+          "experienceInYears": "35",
+          "proficiency": "intermediate"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "fullName": "karthik",
+      "contactPreference": "email",
+      "email": "vikram@gmail.com",
+      "phone": "9164424945",
+      "skills": [
+        {
+          "skillName": "python",
+          "experienceInYears": "1.5",
+          "proficiency": "advanced"
+        }
+      ]
+    }
+  ]
+}

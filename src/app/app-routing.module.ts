@@ -1,17 +1,18 @@
 import { NgModule } from '@angular/core';
 import { Routes, RouterModule } from '@angular/router';
-import { CreateEmployeeComponent } from './employee/create-employee.component';
-import { ListEmployeesComponent } from './employee/list-employees.component';
+
 import { BootstrapDemoComponent } from './bootstrap/bootstrap-demo/bootstrap-demo.component';
+import { HomeComponent } from './home.component';
+import { PageNotFoundComponent } from './page-not-found.component';
 
 
 
 const routes: Routes = [
-  { path: 'list', component: ListEmployeesComponent },
-  { path: 'create', component: CreateEmployeeComponent },
+  { path: 'home', component: HomeComponent },
   { path: 'bootstrap', component: BootstrapDemoComponent },
-  { path: '', redirectTo: '/list', pathMatch: 'full' }
-
+  { path: '', redirectTo: '/home', pathMatch: 'full' },
+  { path: 'employees', loadChildren: './employee/employee.module#EmployeeModule'},
+  { path: '**', component: PageNotFoundComponent }
 ];
 
 @NgModule({
